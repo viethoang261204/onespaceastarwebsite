@@ -250,6 +250,230 @@ function exportData() {
   showToast("Đã xuất file backup");
 }
 
+// ==================== EXCEL IMPORT ====================
+// Map Thai weekday names to our day codes
+const THAI_DAY_MAP = {
+  "Thứ 2": "T2", "Thứ 3": "T3", "Thứ 4": "T4",
+  "Thứ 5": "T5", "Thứ 6": "T6", "Thứ 7": "T7",
+  "Thứ Hai": "T2", "Thứ Ba": "T3", "Thứ Tư": "T4",
+  "Thứ Năm": "T5", "Thứ Sáu": "T6", "Thứ Bảy": "T7",
+  "Chủ Nhật": "CN", "Chủ Nhật": "CN",
+};
+
+// Map Thai slot text to our slot keys
+function normalizeSlot(timeStr) {
+  if (!timeStr || timeStr === "TBD") return null;
+  // Clean up
+  const t = timeStr.trim().replace("–", "-").replace("—", "-");
+  // Already a standard slot?
+  const SLOTS = SEED_DATA.slots;
+  if (SLOTS.includes(t)) return t;
+  // Try exact match
+  for (const s of SLOTS) {
+    if (t === s || t.replace(" ", "") === s.replace(" ", "")) return s;
+  }
+  // Map specific times
+  const slotMap = {
+    "9:00-10:30": "8:00-10:00",
+    "10:30-12:00": "10:00-12:00",
+    "14:00-15:30": "14:00-16:00",
+    "15:30-17:00": "16:00-18:00",
+    "16:00-17:30": "16:00-18:00",
+    "16:30-18:00": "16:00-18:00",
+    "17:00-18:30": "16:00-18:00",
+    "17:30-19:00": "16:00-18:00",
+    "17:30-20:30": "18:00-19:30",
+    "18:00-19:30": "18:00-19:30",
+    "18:00-21:00": "18:00-19:30",
+    "18:30-20:00": "18:00-19:30",
+    "18:30-21:30": "19:30-21:00",
+    "19:30-21:00": "19:30-21:00",
+  };
+  return slotMap[t] || null;
+}
+
+// Normalize teacher name from Excel
+const TEACHER_ALIAS = {
+  "Chử N.T.Hoàng": "Chử Nguyễn Tuấn Hoàng",
+  "Chu Thị Hải Yến": "Chu Thị Hải Yến",
+  "Dương Khánh Linh": "Dương Khánh Linh",
+  "Lý Quảng Văn": "Lý Quảng Văn",
+  "Trần Quang Hưng": "Trần Quang Hưng",
+  "Chu Kim Khánh": "Chu Kim Khánh",
+  "Trần Thị Hương": "Trần Thị Hương",
+  "Trần Đức Thắng": "Trần Đức Thắng",
+  "Nguyễn Yến Linh": "Nguyễn Yến Linh",
+  "Nguyễn Phương Anh": "Nguyễn Phương Anh",
+  "Nguyễn Thị Thơ": "Nguyễn Thị Thơ",
+  "Nguyễn Quý Thịnh": "Nguyễn Quý Thịnh",
+  "Đinh Hồng Châu": "Đinh Hồng Châu",
+  "Kiều Khánh Linh": "Kiều Khánh Linh",
+};
+
+function normalizeTeacher(name) {
+  if (!name || name === "(GV mới)" || name.trim() === "") return null;
+  const clean = name.trim();
+  if (TEACHER_ALIAS[clean]) return TEACHER_ALIAS[clean];
+  // Fuzzy: if it starts with known teacher name
+  for (const [alias, real] of Object.entries(TEACHER_ALIAS)) {
+    if (clean.includes(alias) || alias.includes(clean)) return real;
+    // Check last word match
+    const lastWord = clean.split(" ").pop();
+    const realLast = real.split(" ").pop();
+    if (lastWord === realLast && clean.includes(real.split(" ")[0])) return real;
+  }
+  return clean; // return as-is, app will try to match
+}
+
+// Parse hinhthuc from location name
+function normalizeHinhthuc(loc) {
+  if (!loc) return null;
+  if (loc.includes("Times City")) return "Offline Times City";
+  if (loc.includes("Smart City")) return "Offline Smart City";
+  if (loc.includes("Online")) return "Online";
+  return null;
+}
+
+// Read file as array buffer
+function readFileAsArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// Main import handler
+async function handleExcelImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  try {
+    // Try to read as JSON first (our export format)
+    if (file.name.endsWith(".json")) {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      importFromJSON(data);
+      showToast(`Đã import ${gState.schedules.length} lịch từ JSON`);
+      return;
+    }
+
+    // Try SheetJS for xlsx
+    if (typeof XLSX !== "undefined") {
+      const buffer = await readFileAsArrayBuffer(file);
+      const wb = XLSX.read(buffer, { type: "array" });
+      const firstSheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+      const imported = parseScheduleRows(rows);
+      if (imported > 0) {
+        saveState();
+        renderApp();
+        showToast(`Đã import ${imported} lịch từ Excel`);
+      } else {
+        showToast("Không tìm thấy dữ liệu lịch trong file Excel", "danger");
+      }
+      return;
+    }
+
+    showToast("Thư viện SheetJS chưa load. Hãy refresh trang và thử lại.", "danger");
+  } catch (err) {
+    console.error("Import error:", err);
+    showToast("Lỗi khi đọc file: " + err.message, "danger");
+  }
+  input.value = "";
+}
+
+function parseScheduleRows(rows) {
+  // Find header row (index where col0 = "Cơ sở" or "Thứ")
+  let headerIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (r[0] === "Cơ sở" || r[1] === "Thứ") { headerIdx = i; break; }
+  }
+  if (headerIdx < 0) return 0;
+
+  // Columns: 0=CoSo, 1=Thu, 2=Gio, 3=TL, 4=Khoi, 5=Mon, 6=CT, 7=GV, 8=TrangThai, 9=GhiChu
+  let added = 0;
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r.length < 8) continue;
+    if (!r[0] || r[0] === "" || r[0].toString().includes("▌")) continue;
+
+    const loc = r[0].toString().trim();
+    const thuRaw = r[1] ? r[1].toString().trim() : "";
+    const gioRaw = r[2] ? r[2].toString().trim() : "";
+    const khoi = r[4] ? r[4].toString().trim() : "";
+    const mon = r[5] ? r[5].toString().trim() : "";
+    const ct = r[6] ? r[6].toString().trim() : "";
+    const gvRaw = r[7] ? r[7].toString().trim() : "";
+
+    if (thuRaw === "❌" || thuRaw === "" || !thuRaw) continue;
+    if (gioRaw === "TBD" || !gioRaw) continue;
+
+    const day = THAI_DAY_MAP[thuRaw];
+    const slot = normalizeSlot(gioRaw);
+    const hinhthuc = normalizeHinhthuc(loc);
+    const teacher = normalizeTeacher(gvRaw);
+
+    if (!day || !slot) continue;
+
+    // Normalize program name
+    let program = ct;
+    if (ct.includes("Checkpoint") || ct === "Checkpoint") program = "Checkpoint";
+    else if (ct.includes("IGCSE") || ct === "IGCSE") program = "IGCSE";
+    else if (ct.includes("AS") && !ct.includes("A Level") && !ct.includes("Level")) program = "AS";
+    else if (ct.includes("A Level") || ct.includes("A-Level") || ct.includes("A LEVEL")) program = "A LEVEL";
+    else if (ct.includes("IB")) program = "IB";
+
+    // Parse grade from khoi (e.g. "L8" → 8)
+    const grade = parseInt(khoi.replace(/\D/g, "")) || null;
+
+    // Find or create assignment
+    let assignment = gState.assignments.find(a => {
+      if (program && a.program !== program) return false;
+      if (grade && a.grade !== grade) return false;
+      if (mon && a.subject !== mon) return false;
+      if (hinhthuc && a.hinhthuc !== hinhthuc) return false;
+      return true;
+    });
+
+    if (!assignment && program && grade && mon && hinhthuc) {
+      // Create on the fly
+      assignment = { id: newId("a"), hinhthuc, program, grade, subject: mon, teacher: teacher || null };
+      gState.assignments.push(assignment);
+    }
+
+    if (!assignment) continue;
+
+    // Update teacher if not set
+    if (!assignment.teacher && teacher) {
+      assignment.teacher = teacher;
+    }
+
+    // Add schedule entry
+    const existing = gState.schedules.find(s =>
+      s.assignmentId === assignment.id && s.day === day && s.slot === slot
+    );
+    if (!existing) {
+      gState.schedules.push({ id: newId("sch"), assignmentId: assignment.id, day, slot });
+      added++;
+    }
+  }
+  return added;
+}
+
+function importFromJSON(data) {
+  if (data.schedules && Array.isArray(data.schedules)) {
+    let added = 0;
+    data.schedules.forEach(s => {
+      const exists = gState.schedules.find(x => x.id === s.id);
+      if (!exists) { gState.schedules.push(s); added++; }
+    });
+    if (added > 0) showToast(`Đã thêm ${added} lịch từ backup`, "ok");
+  }
+}
+
 // ==================== RENDER FUNCTIONS ====================
 
 // --- Render Dashboard ---
@@ -713,6 +937,13 @@ function renderScheduleTab() {
         <div>
           <div class="section-eyebrow">Thời khóa biểu</div>
           <div class="section-title">Lịch dạy theo tuần</div>
+        </div>
+        <div style="display:flex;gap:0.625rem;align-items:center">
+          <input type="file" id="import-excel-file" accept=".xlsx,.xls,.json,.csv" style="display:none" onchange="handleExcelImport(this)">
+          <button class="btn btn-secondary" onclick="document.getElementById('import-excel-file').click()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            Import Excel
+          </button>
         </div>
       </div>
       <div class="filter-bar">
