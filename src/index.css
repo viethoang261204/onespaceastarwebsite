@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --astar-bg: #F4EFE6;
+  --astar-surface: #FBF8F3;
+  --astar-surfaceAlt: #EFE8D9;
+  --astar-ink: #1A1A1A;
+  --astar-inkSoft: #4A4742;
+  --astar-muted: #8A8377;
+  --astar-border: #E0D5BD;
+  --astar-borderStrong: #C9BBA0;
+  --astar-accent: #B85C38;
+  --astar-accentDark: #8F3F22;
+  --astar-teal: #1E5F5F;
+  --astar-tealLight: #D4E2DE;
+  --astar-sage: #7A8B6F;
+  --astar-sageLight: #DDE5D3;
+  --astar-amber: #D4A056;
+  --astar-amberLight: #F4E5C3;
+  --astar-danger: #A63E2C;
+  --astar-dangerLight: #F0D5CE;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--astar-bg);
+  font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+  color: var(--astar-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.font-display {
+  font-family: 'Fraunces', 'Times New Roman', serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--astar-bg); }
+::-webkit-scrollbar-thumb { background: var(--astar-borderStrong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--astar-muted); }
