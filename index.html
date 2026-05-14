@@ -3,1175 +3,179 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OneSpace Astar Scheduler</title>
+  <title>OneSpace Astar - Hệ thống phân công & xếp lịch giảng dạy</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --bg: #F4EFE6; --surface: #FBF8F3; --surface-alt: #EFE8D9;
-      --ink: #1A1A1A; --ink-soft: #4A4742; --muted: #8A8377;
-      --border: #E0D5BD; --border-strong: #C9BBA0;
-      --accent: #B85C38; --accent-dark: #8F3F22;
-      --teal: #1E5F5F; --teal-light: #D4E2DE;
-      --sage: #7A8B6F; --sage-light: #DDE5D3;
-      --amber: #D4A056; --amber-light: #F4E5C3;
-      --danger: #A63E2C; --danger-light: #F0D5CE;
-    }
-    body { font-family: 'Be Vietnam Pro', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
-    .font-display { font-family: 'Fraunces', serif; }
-
-    /* Login Page */
-    #login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 48px; width: 400px; max-width: 90vw; }
-    .login-box h1 { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 600; margin-bottom: 8px; }
-    .login-box h1 span { color: var(--accent); font-style: italic; }
-    .login-box p { color: var(--muted); font-size: 14px; margin-bottom: 32px; letter-spacing: 0.04em; }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--ink-soft); }
-    .form-group input { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; background: var(--bg); transition: border-color 0.2s; }
-    .form-group input:focus { outline: none; border-color: var(--accent); }
-    .btn { padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: all 0.2s; }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: var(--accent-dark); }
-    .btn-secondary { background: var(--bg); color: var(--ink-soft); border: 1px solid var(--border); }
-    .btn-secondary:hover { border-color: var(--border-strong); }
-    .btn-block { width: 100%; }
-    .login-error { background: var(--danger-light); color: var(--danger); padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; display: none; }
-
-    /* App Container */
-    #app { display: none; }
-    .app-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 32px; }
-    .app-header-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-    .app-logo { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; }
-    .app-logo span { color: var(--accent); font-style: italic; }
-    .app-logo-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; margin-top: 2px; }
-    .app-nav { display: flex; gap: 8px; }
-    .app-nav button { padding: 10px 20px; border: none; background: transparent; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; border-radius: 8px; color: var(--ink-soft); transition: all 0.2s; }
-    .app-nav button:hover { background: var(--bg); }
-    .app-nav button.active { background: var(--accent); color: white; }
-    .app-nav-right { display: flex; align-items: center; gap: 12px; }
-    .btn-logout { padding: 8px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; }
-
-    /* Main Content */
-    .app-main { max-width: 1200px; margin: 0 auto; padding: 32px; }
-    .section-title { margin-bottom: 24px; }
-    .section-title .eyebrow { font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
-    .section-title h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; margin-top: 4px; }
-
-    /* Stats Grid */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-    .stat-card .stat-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
-    .stat-card .stat-value { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 600; line-height: 1; }
-    .stat-card .stat-label { font-size: 13px; color: var(--ink-soft); margin-top: 8px; }
-
-    /* Alert Cards */
-    .alerts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
-    .alert-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-    .alert-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .alert-card h4 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; }
-    .alert-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-    .alert-badge.danger { background: var(--danger-light); color: var(--danger); }
-    .alert-badge.amber { background: var(--amber-light); color: #8B6914; }
-    .alert-badge.ok { background: var(--sage-light); color: var(--sage); }
-    .alert-card ul { list-style: none; font-size: 13px; color: var(--ink-soft); }
-    .alert-card ul li { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
-    .alert-card ul li:last-child { border-bottom: none; }
-    .alert-card .empty { font-style: italic; color: var(--muted); }
-
-    /* Tables */
-    .table-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .table-header h3 { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; }
-    .table-search { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit; width: 200px; }
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); background: var(--surface-alt); }
-    td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid var(--border); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover { background: var(--bg); }
-    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-family: inherit; font-weight: 500; }
-    .btn-edit { background: var(--teal-light); color: var(--teal); }
-    .btn-delete { background: var(--danger-light); color: var(--danger); }
-
-    /* Modal */
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; display: none; }
-    .modal-overlay.active { display: flex; }
-    .modal { background: var(--surface); border-radius: 16px; width: 600px; max-width: 90vw; max-height: 90vh; overflow-y: auto; }
-    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .modal-header h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
-    .modal-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--bg); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-    .modal-body { padding: 24px; }
-    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
-
-    /* Form */
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .form-row.full { grid-template-columns: 1fr; }
-    .checkbox-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .checkbox-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg); border-radius: 6px; font-size: 13px; cursor: pointer; }
-    .checkbox-item input { width: 16px; height: 16px; cursor: pointer; }
-    .checkbox-item:hover { background: var(--surface-alt); }
-
-    /* Availability Grid */
-    .availability-grid { display: grid; gap: 8px; margin-top: 16px; }
-    .availability-row { display: grid; grid-template-columns: 60px repeat(7, 1fr); gap: 4px; align-items: center; }
-    .availability-row .day-label { font-size: 12px; font-weight: 600; color: var(--muted); text-align: center; }
-    .availability-row.header { font-size: 12px; font-weight: 600; color: var(--muted); }
-    .slot-cell { height: 32px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; transition: all 0.15s; }
-    .slot-cell.available { background: var(--sage); border-color: var(--sage); }
-    .slot-cell:hover { border-color: var(--accent); }
-    .slot-cell.header { background: var(--surface-alt); cursor: default; }
-    .slot-cell.header:hover { border-color: var(--border); }
-
-    /* Schedule Grid */
-    .schedule-grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); gap: 2px; background: var(--border); border-radius: 8px; overflow: hidden; margin-top: 16px; }
-    .schedule-cell { background: var(--surface); padding: 8px; min-height: 48px; font-size: 11px; }
-    .schedule-cell.header { background: var(--surface-alt); font-weight: 600; text-align: center; color: var(--muted); }
-    .schedule-cell.time { font-weight: 500; color: var(--ink-soft); font-size: 11px; display: flex; align-items: center; justify-content: center; }
-    .schedule-item { background: var(--teal); color: white; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; font-size: 10px; cursor: pointer; }
-    .schedule-item:hover { opacity: 0.8; }
-
-    /* Guide Card */
-    .guide-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-top: 32px; }
-    .guide-card h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-    .guide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
-    .guide-grid h4 { color: var(--ink); font-weight: 600; margin-bottom: 8px; }
-    .backup-note { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
-
-    /* Toast */
-    .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; z-index: 2000; animation: slideIn 0.3s ease; }
-    .toast.ok { background: var(--sage); color: white; }
-    .toast.error { background: var(--danger); color: white; }
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-    /* Select */
-    select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; background: var(--bg); cursor: pointer; }
-    select:focus { outline: none; border-color: var(--accent); }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .alerts-grid { grid-template-columns: 1fr; }
-      .app-nav { flex-wrap: wrap; }
-      .form-row { grid-template-columns: 1fr; }
-      .guide-grid { grid-template-columns: 1fr; }
-      .availability-row { grid-template-columns: 50px repeat(7, 1fr); overflow-x: auto; }
-    }
-  </style>
 </head>
 <body>
 
-<!-- LOGIN PAGE -->
-<div id="login-page">
-  <div class="login-box">
-    <h1>OneSpace <span>Astar</span></h1>
-    <p>HỆ THỐNG PHÂN CÔNG & XẾP LỊCH GIẢNG DẠY</p>
-    <div id="login-error" class="login-error">Tên đăng nhập hoặc mật khẩu không đúng!</div>
-    <form id="login-form">
-      <div class="form-group">
-        <label>Tên đăng nhập</label>
-        <input type="text" id="username" placeholder="Nhập tên đăng nhập" required>
-      </div>
-      <div class="form-group">
-        <label>Mật khẩu</label>
-        <input type="password" id="password" placeholder="Nhập mật khẩu" required>
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
-    </form>
+<!-- ==================== LOGIN PAGE ==================== -->
+<div id="login-page" class="login-wrapper" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">OneSpace <span>Astar</span></div>
+    <div class="login-subtitle">HỆ THỐNG PHÂN CÔNG & XẾP LỊCH GIẢNG DẠY</div>
+    <div class="login-field">
+      <label>Tên đăng nhập</label>
+      <input type="text" id="login-username" class="login-input" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Mật khẩu</label>
+      <input type="password" id="login-password" class="login-input" placeholder="••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" onclick="doLogin()">Đăng nhập</button>
   </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="app">
-  <header class="app-header">
-    <div class="app-header-inner">
-      <div>
-        <div class="app-logo">OneSpace <span>Astar</span></div>
-        <div class="app-logo-sub">HỆ THỐNG PHÂN CÔNG & XẾP LỊCH GIẢNG DẠY</div>
+<!-- ==================== MAIN APP ==================== -->
+<div id="app-page" style="display:none">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-row">
+        <div>
+          <div class="header-brand">OneSpace <span>Astar</span></div>
+          <div class="header-tagline">HỆ THỐNG PHÂN CÔNG & XẾP LỊCH GIẢNG DẠY</div>
+        </div>
+        <div class="header-actions">
+          <div class="alert-badge" id="alert-badge" style="display:none"></div>
+          <div class="data-menu-wrap">
+            <button class="data-menu-btn" onclick="toggleDataMenu()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+              Dữ liệu
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div id="data-menu" class="data-menu" style="display:none">
+              <button onclick="exportData();toggleDataMenu()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Xuất file backup (JSON)
+              </button>
+            </div>
+          </div>
+          <button class="data-menu-btn" onclick="doLogout()" style="cursor:pointer">Đăng xuất</button>
+        </div>
       </div>
-      <nav class="app-nav">
-        <button class="active" data-tab="dashboard">Tổng quan</button>
-        <button data-tab="teachers">Giáo viên</button>
-        <button data-tab="assignments">Phân công</button>
-        <button data-tab="schedule">Thời khóa biểu</button>
+      <nav class="header-nav">
+        <button class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          Tổng quan
+        </button>
+        <button class="nav-tab" data-tab="teachers" onclick="switchTab('teachers')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Giáo viên
+        </button>
+        <button class="nav-tab" data-tab="assignments" onclick="switchTab('assignments')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+          Phân công
+        </button>
+        <button class="nav-tab" data-tab="schedule" onclick="switchTab('schedule')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          Thời khóa biểu
+        </button>
       </nav>
-      <div class="app-nav-right">
-        <button class="btn-logout" id="btn-logout">Đăng xuất</button>
-      </div>
     </div>
   </header>
 
-  <main class="app-main">
-    <!-- Dashboard Tab -->
-    <div id="tab-dashboard" class="tab-content">
-      <div class="section-title">
-        <div class="eyebrow">Tổng quan</div>
-        <h2>Tình hình giảng dạy</h2>
-      </div>
-      <div class="stats-grid" id="stats-grid"></div>
-      <div class="alerts-grid" id="alerts-grid"></div>
-      <div class="guide-card">
-        <h3>Hướng dẫn nhanh</h3>
-        <div class="guide-grid">
-          <div>
-            <h4>1. Quản lý Giáo viên</h4>
-            Thêm/sửa GV, click ô lịch để bật-tắt slot rảnh, tick năng lực dạy theo môn.
-          </div>
-          <div>
-            <h4>2. Phân công môn</h4>
-            Thêm môn-lớp mới, chọn GV từ danh sách app gợi ý theo năng lực.
-          </div>
-          <div>
-            <h4>3. Xếp TKB</h4>
-            Gắn lớp vào ngày + giờ. App tự cảnh báo trùng giờ và GV bận.
-          </div>
-        </div>
-        <div class="backup-note">
-          <strong>Nhớ backup:</strong> Vào menu "Dữ liệu" ở góc phải để xuất file JSON. Lưu file đó vào Drive/máy để phòng mất dữ liệu khi xóa cache trình duyệt.
-        </div>
-      </div>
-    </div>
-
-    <!-- Teachers Tab -->
-    <div id="tab-teachers" class="tab-content" style="display:none;">
-      <div class="section-title" style="display:flex;justify-content:space-between;align-items:flex-end;">
-        <div>
-          <div class="eyebrow">Quản lý</div>
-          <h2>Danh sách Giáo viên</h2>
-        </div>
-        <button class="btn btn-primary" id="btn-add-teacher">+ Thêm Giáo viên</button>
-      </div>
-      <div style="margin: 24px 0;">
-        <input type="text" class="table-search" id="teacher-search" placeholder="Tìm kiếm giáo viên...">
-      </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Mã GV</th>
-              <th>Tên</th>
-              <th>Địa điểm</th>
-              <th>Chương trình</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="teachers-table"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Assignments Tab -->
-    <div id="tab-assignments" class="tab-content" style="display:none;">
-      <div class="section-title" style="display:flex;justify-content:space-between;align-items:flex-end;">
-        <div>
-          <div class="eyebrow">Quản lý</div>
-          <h2>Phân công Môn học</h2>
-        </div>
-        <button class="btn btn-primary" id="btn-add-assignment">+ Thêm Phân công</button>
-      </div>
-      <div style="margin: 24px 0;">
-        <input type="text" class="table-search" id="assignment-search" placeholder="Tìm kiếm phân công...">
-      </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Hình thức</th>
-              <th>Chương trình</th>
-              <th>Lớp</th>
-              <th>Môn</th>
-              <th>Giáo viên</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="assignments-table"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Schedule Tab -->
-    <div id="tab-schedule" class="tab-content" style="display:none;">
-      <div class="section-title">
-        <div class="eyebrow">Xếp lịch</div>
-        <h2>Thời khóa biểu</h2>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <select id="schedule-assignment" style="margin-right: 12px; min-width: 300px;">
-          <option value="">-- Chọn phân công cần xếp lịch --</option>
-        </select>
-        <button class="btn btn-primary" id="btn-add-schedule">+ Thêm lịch</button>
-      </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Phân công</th>
-              <th>Thứ</th>
-              <th>Ca</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="schedules-table"></tbody>
-        </table>
-      </div>
+  <!-- MAIN CONTENT -->
+  <main>
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <div id="app-content"></div>
     </div>
   </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span>OneSpace Astar • Hệ thống nội bộ phân công & xếp lịch giảng dạy</span>
+    <span>Dữ liệu lưu cục bộ — backup thường xuyên qua menu Dữ liệu</span>
+  </footer>
+
 </div>
 
-<!-- Modal: Teacher -->
-<div class="modal-overlay" id="modal-teacher">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="modal-teacher-title">Thêm Giáo viên</h3>
-      <button class="modal-close" onclick="closeModal('modal-teacher')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="teacher-id">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Mã GV</label>
-          <input type="text" id="teacher-code" placeholder="VD: T6-0001">
-        </div>
-        <div class="form-group">
-          <label>Tên GV *</label>
-          <input type="text" id="teacher-name" placeholder="VD: Nguyễn Văn A" required>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Địa điểm dạy</label>
-        <div class="checkbox-group">
-          <label class="checkbox-item"><input type="checkbox" id="loc-timescity"> Times City</label>
-          <label class="checkbox-item"><input type="checkbox" id="loc-smartcity"> Smart City</label>
-          <label class="checkbox-item"><input type="checkbox" id="loc-online"> Online</label>
-          <label class="checkbox-item"><input type="checkbox" id="loc-home"> Tại nhà</label>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Năng lực giảng dạy</label>
-        <div id="teacher-subjects"></div>
-      </div>
-      <div class="form-group">
-        <label>Thời gian rảnh</label>
-        <div class="availability-grid" id="teacher-availability"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-teacher')">Hủy</button>
-      <button class="btn btn-primary" onclick="saveTeacher()">Lưu</button>
-    </div>
-  </div>
-</div>
+<!-- MODAL CONTAINER -->
+<div id="modal-container"></div>
 
-<!-- Modal: Assignment -->
-<div class="modal-overlay" id="modal-assignment">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="modal-assignment-title">Thêm Phân công</h3>
-      <button class="modal-close" onclick="closeModal('modal-assignment')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="assignment-id">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Hình thức *</label>
-          <select id="assignment-hinhthuc" required>
-            <option value="">-- Chọn hình thức --</option>
-            <option value="Offline Times City">Offline Times City</option>
-            <option value="Offline Smart City">Offline Smart City</option>
-            <option value="Online">Online</option>
-            <option value="Tại nhà">Tại nhà</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Chương trình *</label>
-          <select id="assignment-program" required>
-            <option value="">-- Chọn chương trình --</option>
-            <option value="Checkpoint">Checkpoint</option>
-            <option value="IGCSE">IGCSE</option>
-            <option value="AS">AS</option>
-            <option value="A LEVEL">A LEVEL</option>
-            <option value="IB">IB</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Lớp *</label>
-          <select id="assignment-grade" required>
-            <option value="">-- Chọn lớp --</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Môn *</label>
-          <select id="assignment-subject" required>
-            <option value="">-- Chọn môn --</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Giáo viên</label>
-        <select id="assignment-teacher">
-          <option value="">-- Chưa phân công --</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-assignment')">Hủy</button>
-      <button class="btn btn-primary" onclick="saveAssignment()">Lưu</button>
-    </div>
-  </div>
-</div>
+<!-- TOAST -->
+<div id="toast" class="toast" style="display:none"></div>
 
-<!-- Modal: Schedule -->
-<div class="modal-overlay" id="modal-schedule">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Thêm lịch học</h3>
-      <button class="modal-close" onclick="closeModal('modal-schedule')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Phân công</label>
-        <select id="schedule-assignment-select" style="width:100%;">
-          <option value="">-- Chọn phân công --</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Thứ *</label>
-          <select id="schedule-day" required>
-            <option value="">-- Chọn thứ --</option>
-            <option value="T2">Thứ 2</option>
-            <option value="T3">Thứ 3</option>
-            <option value="T4">Thứ 4</option>
-            <option value="T5">Thứ 5</option>
-            <option value="T6">Thứ 6</option>
-            <option value="T7">Thứ 7</option>
-            <option value="CN">Chủ nhật</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Ca *</label>
-          <select id="schedule-slot" required>
-            <option value="">-- Chọn ca --</option>
-            <option value="8:00-10:00">8:00 - 10:00</option>
-            <option value="10:00-12:00">10:00 - 12:00</option>
-            <option value="14:00-16:00">14:00 - 16:00</option>
-            <option value="16:00-18:00">16:00 - 18:00</option>
-            <option value="18:00-19:30">18:00 - 19:30</option>
-            <option value="19:30-21:00">19:30 - 21:00</option>
-            <option value="Sau 21:00">Sau 21:00</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-schedule')">Hủy</button>
-      <button class="btn btn-primary" onclick="saveSchedule()">Lưu</button>
-    </div>
-  </div>
-</div>
+<!-- SCRIPTS -->
+<script src="auth.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
 
 <script>
-// ==================== DATA ====================
-const DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const SLOTS = ["8:00-10:00", "10:00-12:00", "14:00-16:00", "16:00-18:00", "18:00-19:30", "19:30-21:00", "Sau 21:00"];
-const LOCATIONS = ["Times City", "Smart City", "Online", "Tại nhà"];
-const PROGRAMS = ["Checkpoint", "IGCSE", "AS", "A LEVEL", "IB"];
-const GRADES_BY_PROGRAM = {
-  "Checkpoint": [6, 7, 8],
-  "IGCSE": [9, 10],
-  "AS": [11],
-  "A LEVEL": [12],
-  "IB": [11, 12]
-};
-const SUBJECTS_BY_PROGRAM = {
-  "Checkpoint": ["Math", "Science"],
-  "IGCSE": ["Math", "Biology", "Chemistry", "Physics"],
-  "AS": ["Math", "Biology", "Chemistry", "Physics"],
-  "A LEVEL": ["Math", "Biology", "Chemistry", "Physics"],
-  "IB": ["Math", "Biology", "Chemistry", "Physics"]
-};
-const STORAGE_KEY = "astar_v3_state";
-
-// Seed data
-const SEED = {
-  teachers: [
-    { id: "t_1", code: "T6-0001", name: "Nguyễn Văn Minh", role: "Giáo Viên", locations: { "Times City": true, "Smart City": false, "Online": true, "Tại nhà": false }, subjects: { Checkpoint: { Math: true, Science: true }, IGCSE: { Math: true, Science: false, Biology: true, Chemistry: true, Physics: true }, AS: { Math: true, Biology: false, Chemistry: false, Physics: true }, "A LEVEL": { Math: true, Biology: false, Chemistry: false, Physics: true }, IB: { Math: true, Biology: false, Chemistry: false, Physics: true } } },
-    { id: "t_2", code: "T6-0002", name: "Trần Thị Lan", role: "Giáo Viên", locations: { "Times City": true, "Smart City": true, "Online": false, "Tại nhà": false }, subjects: { Checkpoint: { Math: true, Science: false }, IGCSE: { Math: true, Science: false, Biology: false, Chemistry: false, Physics: false }, AS: { Math: true, Biology: false, Chemistry: false, Physics: false }, "A LEVEL": { Math: true, Biology: false, Chemistry: false, Physics: false }, IB: { Math: true, Biology: false, Chemistry: false, Physics: false } } },
-    { id: "t_3", code: "T6-0003", name: "Lê Hoàng Nam", role: "Giáo Viên", locations: { "Times City": false, "Smart City": false, "Online": true, "Tại nhà": true }, subjects: { Checkpoint: { Math: false, Science: true }, IGCSE: { Math: false, Science: true, Biology: true, Chemistry: true, Physics: true }, AS: { Math: false, Biology: true, Chemistry: true, Physics: true }, "A LEVEL": { Math: false, Biology: true, Chemistry: true, Physics: true }, IB: { Math: false, Biology: true, Chemistry: true, Physics: true } } }
-  ],
-  availability: {
-    "Nguyễn Văn Minh": { T2: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": false, "16:00-18:00": false, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": false }, T3: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": false, "16:00-18:00": false, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": false }, T4: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": false, "16:00-18:00": false, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": false }, T5: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": false, "16:00-18:00": false, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": false }, T6: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": false, "16:00-18:00": false, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": false }, T7: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false }, CN: { "8:00-10:00": false, "10:00-12:00": false, "14:00-16:00": false, "16:00-18:00": false, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false } },
-    "Trần Thị Lan": { T2: { "8:00-10:00": false, "10:00-12:00": false, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false }, T3: { "8:00-10:00": false, "10:00-12:00": false, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false }, T4: { "8:00-10:00": false, "10:00-12:00": false, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false }, T5: { "8:00-10:00": false, "10:00-12:00": false, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false }, T6: { "8:00-10:00": false, "10:00-12:00": false, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false }, T7: { "8:00-10:00": false, "10:00-12:00": false, "14:00-16:00": false, "16:00-18:00": false, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false }, CN: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": false, "19:30-21:00": false, "Sau 21:00": false } },
-    "Lê Hoàng Nam": { T2: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": true }, T3: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": true }, T4: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": true }, T5: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": true }, T6: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": true }, T7: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": true }, CN: { "8:00-10:00": true, "10:00-12:00": true, "14:00-16:00": true, "16:00-18:00": true, "18:00-19:30": true, "19:30-21:00": true, "Sau 21:00": true } }
-  },
-  assignments: [
-    { id: "a_1", hinhthuc: "Offline Times City", program: "Checkpoint", grade: 6, subject: "Math", teacher: "Nguyễn Văn Minh" },
-    { id: "a_2", hinhthuc: "Offline Times City", program: "Checkpoint", grade: 6, subject: "Science", teacher: "Lê Hoàng Nam" },
-    { id: "a_3", hinhthuc: "Online", program: "IGCSE", grade: 9, subject: "Math", teacher: "Trần Thị Lan" },
-    { id: "a_4", hinhthuc: "Offline Smart City", program: "AS", grade: 11, subject: "Biology", teacher: "Lê Hoàng Nam" }
-  ],
-  schedules: []
-};
-
-// App State
-let state = {
-  teachers: [],
-  availability: {},
-  assignments: [],
-  schedules: []
-};
-
-// ==================== AUTH ====================
-const USERS = {
-  "admin": "admin",
-  "teacher": "admin"
-};
-
-function checkAuth() {
-  const loggedIn = sessionStorage.getItem("astar_logged_in");
-  if (loggedIn === "true") {
-    showApp();
-  }
-}
-
-function showLogin() {
-  document.getElementById("login-page").style.display = "flex";
-  document.getElementById("app").style.display = "none";
-}
-
-function showApp() {
-  document.getElementById("login-page").style.display = "none";
-  document.getElementById("app").style.display = "block";
-  loadData();
-  renderAll();
-  switchTab("dashboard");
-}
-
-document.getElementById("login-form").addEventListener("submit", function(e) {
-  e.preventDefault();
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
-  
-  if (USERS[user] && USERS[user] === pass) {
-    sessionStorage.setItem("astar_logged_in", "true");
-    sessionStorage.setItem("astar_user", user);
-    document.getElementById("login-error").style.display = "none";
-    showApp();
+// ==================== AUTH CHECK ====================
+(function() {
+  if (checkAuth()) {
+    document.getElementById("login-page").style.display = "none";
+    document.getElementById("app-page").style.display = "";
+    initApp();
   } else {
-    document.getElementById("login-error").style.display = "block";
+    document.getElementById("login-page").style.display = "flex";
+    document.getElementById("app-page").style.display = "none";
   }
-});
+})();
 
-document.getElementById("btn-logout").addEventListener("click", function() {
-  sessionStorage.removeItem("astar_logged_in");
-  sessionStorage.removeItem("astar_user");
-  showLogin();
-});
+function doLogin() {
+  const user = document.getElementById("login-username").value.trim();
+  const pass = document.getElementById("login-password").value;
+  const errEl = document.getElementById("login-error");
+  const userInput = document.getElementById("login-username");
+  const passInput = document.getElementById("login-password");
 
-// ==================== DATA MANAGEMENT ====================
-function loadData() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const data = JSON.parse(saved);
-      state.teachers = data.teachers || SEED.teachers;
-      state.availability = data.availability || SEED.availability;
-      state.assignments = data.assignments || SEED.assignments;
-      state.schedules = data.schedules || SEED.schedules;
-    } else {
-      state = JSON.parse(JSON.stringify(SEED));
-    }
-  } catch (e) {
-    state = JSON.parse(JSON.stringify(SEED));
+  if (!user || !pass) {
+    errEl.textContent = "Vui lòng nhập tên đăng nhập và mật khẩu.";
+    if (!user) userInput.classList.add("error");
+    if (!pass) passInput.classList.add("error");
+    return;
   }
-}
 
-function saveData() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {
-    console.error("Save error:", e);
+  if (login(user, pass)) {
+    errEl.textContent = "";
+    userInput.classList.remove("error");
+    passInput.classList.remove("error");
+    document.getElementById("login-page").style.display = "none";
+    document.getElementById("app-page").style.display = "";
+    initApp();
+  } else {
+    errEl.textContent = "Tên đăng nhập hoặc mật khẩu không đúng.";
+    userInput.classList.add("error");
+    passInput.classList.add("error");
   }
 }
 
-function newId(prefix) {
-  return prefix + "_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+function doLogout() {
+  logout();
 }
 
-// ==================== HELPERS ====================
-function teacherCanTeach(teacher, program, subject) {
-  return !!teacher?.subjects?.[program]?.[subject];
-}
-
-function teacherTeachesLocation(teacher, hinhthuc) {
-  const locs = teacher?.locations;
-  if (!locs) return false;
-  if (hinhthuc.includes("Times City")) return locs["Times City"];
-  if (hinhthuc.includes("Smart City")) return locs["Smart City"];
-  if (hinhthuc.includes("Online")) return locs["Online"];
-  if (hinhthuc.includes("Tại nhà")) return locs["Tại nhà"];
-  return false;
-}
-
-function hinhthucShort(h) {
-  return h.replace("Offline ", "");
-}
-
-function showToast(msg, type = "ok") {
-  const existing = document.querySelector(".toast");
-  if (existing) existing.remove();
-  
-  const toast = document.createElement("div");
-  toast.className = "toast " + type;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  
-  setTimeout(() => toast.remove(), 2800);
-}
-
-function getInsights() {
-  const unassigned = state.assignments.filter(a => !a.teacher);
-  const wrongCapability = state.assignments.filter(a => {
-    if (!a.teacher) return false;
-    const t = state.teachers.find(x => x.name === a.teacher);
-    if (!t) return true;
-    return !teacherCanTeach(t, a.program, a.subject) || !teacherTeachesLocation(t, a.hinhthuc);
-  });
-  
-  const slotMap = {};
-  state.schedules.forEach(s => {
-    const a = state.assignments.find(x => x.id === s.assignmentId);
-    if (!a || !a.teacher) return;
-    const key = a.teacher + "|" + s.day + "|" + s.slot;
-    if (!slotMap[key]) slotMap[key] = [];
-    slotMap[key].push(s);
-  });
-  const conflicts = Object.values(slotMap).filter(arr => arr.length > 1);
-  
-  const availViolations = [];
-  state.schedules.forEach(s => {
-    const a = state.assignments.find(x => x.id === s.assignmentId);
-    if (!a?.teacher) return;
-    const av = state.availability[a.teacher];
-    if (av && av[s.day] && av[s.day][s.slot] === false) {
-      availViolations.push(s);
-    }
-  });
-  
-  return { unassigned, wrongCapability, scheduled: state.schedules.length, conflicts, availViolations };
-}
-
-// ==================== TAB NAVIGATION ====================
+// ==================== NAVIGATION ====================
 function switchTab(tab) {
-  document.querySelectorAll(".tab-content").forEach(el => el.style.display = "none");
-  document.getElementById("tab-" + tab).style.display = "block";
-  
-  document.querySelectorAll(".app-nav button").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.tab === tab);
-  });
+  currentTab = tab;
+  renderApp();
 }
 
-document.querySelectorAll(".app-nav button[data-tab]").forEach(btn => {
-  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
-});
-
-function renderAll() {
-  renderStats();
-  renderAlerts();
-  renderTeachers();
-  renderAssignments();
-  renderSchedules();
-}
-
-// ==================== DASHBOARD ====================
-function renderStats() {
-  const insights = getInsights();
-  const stats = [
-    { label: "Giáo viên", value: state.teachers.length, color: "var(--teal)" },
-    { label: "Môn cần phân công", value: state.assignments.length, color: "var(--ink)" },
-    { label: "Đã phân GV", value: state.assignments.filter(a => a.teacher).length, color: "var(--sage)" },
-    { label: "Đã xếp TKB", value: state.schedules.length, color: "var(--accent)" }
-  ];
-  
-  const icons = ["👤", "📚", "✅", "📅"];
-  document.getElementById("stats-grid").innerHTML = stats.map((s, i) => `
-    <div class="stat-card">
-      <div class="stat-icon" style="background: ${s.color}20; color: ${s.color}; font-size: 18px;">${icons[i]}</div>
-      <div class="stat-value" style="color: ${s.color}">${s.value}</div>
-      <div class="stat-label">${s.label}</div>
-    </div>
-  `).join("");
-}
-
-function renderAlerts() {
-  const insights = getInsights();
-  const alerts = [
-    { title: "Lớp chưa có GV", count: insights.unassigned.length, tone: insights.unassigned.length > 0 ? "danger" : "ok",
-      items: insights.unassigned.slice(0, 6).map(a => `${hinhthucShort(a.hinhthuc)} • Lớp ${a.grade} • ${a.subject} (${a.program})`),
-      empty: "Tất cả lớp đã có GV phụ trách." },
-    { title: "GV chưa đủ năng lực dạy môn", count: insights.wrongCapability.length, tone: insights.wrongCapability.length > 0 ? "amber" : "ok",
-      items: insights.wrongCapability.slice(0, 6).map(a => `${a.teacher} → ${a.subject} (${a.program}) tại ${hinhthucShort(a.hinhthuc)}`),
-      empty: "Mọi phân công đều khớp năng lực GV." },
-    { title: "Xung đột giờ dạy của GV", count: insights.conflicts.length, tone: insights.conflicts.length > 0 ? "danger" : "ok",
-      items: insights.conflicts.slice(0, 6).map((c, i) => `${state.assignments.find(a => a.id === c[i].assignmentId)?.teacher || 'GV'} bị xếp ${c.length} lớp cùng ${c[0].day} ${c[0].slot}`),
-      empty: "Không có GV nào bị trùng lịch." },
-    { title: "GV không rảnh slot đã xếp", count: insights.availViolations.length, tone: insights.availViolations.length > 0 ? "amber" : "ok",
-      items: insights.availViolations.slice(0, 6).map(v => {
-        const a = state.assignments.find(x => x.id === v.assignmentId);
-        return `${a?.teacher || 'GV'} • ${v.day} ${v.slot} → ${a?.subject || ''}`;
-      }),
-      empty: "Mọi lớp đã xếp đều rơi vào slot GV rảnh." }
-  ];
-  
-  document.getElementById("alerts-grid").innerHTML = alerts.map(a => `
-    <div class="alert-card">
-      <div class="alert-card-header">
-        <h4>${a.title}</h4>
-        <div class="alert-badge ${a.tone}">${a.count}</div>
-      </div>
-      ${a.count === 0 ? `<div class="empty">${a.empty}</div>` : 
-        `<ul>${a.items.map(item => `<li><span style="color: var(--${a.tone === 'danger' ? 'danger' : 'amber'})">—</span> ${item}</li>`).join("")}</ul>`
-      }
-    </div>
-  `).join("");
-}
-
-// ==================== TEACHERS ====================
-function renderTeachers() {
-  const search = document.getElementById("teacher-search")?.value?.toLowerCase() || "";
-  const filtered = state.teachers.filter(t => t.name.toLowerCase().includes(search));
-  
-  document.getElementById("teachers-table").innerHTML = filtered.map(t => {
-    const locs = Object.entries(t.locations).filter(([k, v]) => v).map(([k]) => k).join(", ");
-    const progs = Object.entries(t.subjects).filter(([p, subs]) => Object.values(subs).some(v => v)).map(([p]) => p).join(", ");
-    return `
-      <tr>
-        <td>${t.code || '-'}</td>
-        <td><strong>${t.name}</strong></td>
-        <td>${locs || '-'}</td>
-        <td>${progs || '-'}</td>
-        <td>
-          <button class="btn-sm btn-edit" onclick="editTeacher('${t.id}')">Sửa</button>
-          <button class="btn-sm btn-delete" onclick="deleteTeacher('${t.id}')">Xóa</button>
-        </td>
-      </tr>
-    `;
-  }).join("");
-  
-  document.getElementById("teacher-search")?.addEventListener("input", renderTeachers);
-}
-
-document.getElementById("btn-add-teacher").addEventListener("click", () => {
-  document.getElementById("modal-teacher-title").textContent = "Thêm Giáo viên";
-  document.getElementById("teacher-id").value = "";
-  document.getElementById("teacher-code").value = "";
-  document.getElementById("teacher-name").value = "";
-  document.getElementById("loc-timescity").checked = false;
-  document.getElementById("loc-smartcity").checked = false;
-  document.getElementById("loc-online").checked = false;
-  document.getElementById("loc-home").checked = false;
-  buildSubjectCheckboxes();
-  buildAvailabilityGrid();
-  openModal("modal-teacher");
-});
-
-function buildSubjectCheckboxes() {
-  const container = document.getElementById("teacher-subjects");
-  container.innerHTML = PROGRAMS.map(prog => {
-    const subjects = SUBJECTS_BY_PROGRAM[prog];
-    return `
-      <div style="margin-bottom: 12px;">
-        <div style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px;">${prog}</div>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          ${subjects.map(sub => `
-            <label class="checkbox-item" style="font-size: 12px;">
-              <input type="checkbox" id="subj-${prog}-${sub}" data-program="${prog}" data-subject="${sub}">
-              ${sub}
-            </label>
-          `).join("")}
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-function buildAvailabilityGrid() {
-  const container = document.getElementById("teacher-availability");
-  container.innerHTML = `
-    <div class="availability-row header">
-      <div></div>
-      ${DAYS.map(d => `<div class="slot-cell header" style="text-align:center;">${d}</div>`).join("")}
-    </div>
-    ${SLOTS.map(slot => `
-      <div class="availability-row">
-        <div class="day-label">${slot}</div>
-        ${DAYS.map(day => `
-          <div class="slot-cell" data-day="${day}" data-slot="${slot}" onclick="toggleSlot(this)" style="background: var(--border);"></div>
-        `).join("")}
-      </div>
-    `).join("")}
-  `;
-}
-
-function toggleSlot(cell) {
-  const isAvail = cell.classList.contains("available");
-  if (isAvail) {
-    cell.classList.remove("available");
-    cell.style.background = "var(--border)";
+// ==================== DATA MENU ====================
+function toggleDataMenu() {
+  const menu = document.getElementById("data-menu");
+  const isVisible = menu.style.display !== "none";
+  if (isVisible) {
+    menu.style.display = "none";
   } else {
-    cell.classList.add("available");
-    cell.style.background = "var(--sage)";
-  }
-}
-
-function editTeacher(id) {
-  const teacher = state.teachers.find(t => t.id === id);
-  if (!teacher) return;
-  
-  document.getElementById("modal-teacher-title").textContent = "Sửa Giáo viên";
-  document.getElementById("teacher-id").value = teacher.id;
-  document.getElementById("teacher-code").value = teacher.code || "";
-  document.getElementById("teacher-name").value = teacher.name;
-  document.getElementById("loc-timescity").checked = teacher.locations["Times City"];
-  document.getElementById("loc-smartcity").checked = teacher.locations["Smart City"];
-  document.getElementById("loc-online").checked = teacher.locations["Online"];
-  document.getElementById("loc-home").checked = teacher.locations["Tại nhà"];
-  
-  buildSubjectCheckboxes();
-  Object.entries(teacher.subjects).forEach(([prog, subs]) => {
-    Object.entries(subs).forEach(([sub, val]) => {
-      const cb = document.getElementById(`subj-${prog}-${sub}`);
-      if (cb) cb.checked = val;
-    });
-  });
-  
-  buildAvailabilityGrid();
-  const avail = state.availability[teacher.name] || {};
-  DAYS.forEach(day => {
-    SLOTS.forEach(slot => {
-      if (avail[day] && avail[day][slot]) {
-        const cell = document.querySelector(`.slot-cell[data-day="${day}"][data-slot="${slot}"]`);
-        if (cell) {
-          cell.classList.add("available");
-          cell.style.background = "var(--sage)";
-        }
+    menu.style.display = "block";
+    // Close on outside click
+    const closeHandler = (e) => {
+      if (!document.querySelector(".data-menu-wrap").contains(e.target)) {
+        menu.style.display = "none";
+        document.removeEventListener("click", closeHandler);
       }
-    });
-  });
-  
-  openModal("modal-teacher");
-}
-
-function saveTeacher() {
-  const id = document.getElementById("teacher-id").value;
-  const name = document.getElementById("teacher-name").value.trim();
-  if (!name) {
-    showToast("Vui lòng nhập tên GV!", "error");
-    return;
-  }
-  
-  const subjects = {};
-  PROGRAMS.forEach(prog => {
-    subjects[prog] = {};
-    SUBJECTS_BY_PROGRAM[prog].forEach(sub => {
-      const cb = document.getElementById(`subj-${prog}-${sub}`);
-      subjects[prog][sub] = cb ? cb.checked : false;
-    });
-  });
-  
-  const locations = {
-    "Times City": document.getElementById("loc-timescity").checked,
-    "Smart City": document.getElementById("loc-smartcity").checked,
-    "Online": document.getElementById("loc-online").checked,
-    "Tại nhà": document.getElementById("loc-home").checked
-  };
-  
-  const availability = {};
-  DAYS.forEach(day => {
-    availability[day] = {};
-    SLOTS.forEach(slot => {
-      const cell = document.querySelector(`.slot-cell[data-day="${day}"][data-slot="${slot}"]`);
-      availability[day][slot] = cell && cell.classList.contains("available");
-    });
-  });
-  
-  if (id) {
-    const idx = state.teachers.findIndex(t => t.id === id);
-    if (idx >= 0) {
-      const oldName = state.teachers[idx].name;
-      state.teachers[idx] = { ...state.teachers[idx], code: document.getElementById("teacher-code").value, name, locations, subjects };
-      if (oldName !== name) {
-        state.availability[name] = availability;
-        delete state.availability[oldName];
-        state.assignments.forEach(a => {
-          if (a.teacher === oldName) a.teacher = name;
-        });
-      } else {
-        state.availability[name] = availability;
-      }
-    }
-  } else {
-    const newTeacher = {
-      id: newId("t"),
-      code: document.getElementById("teacher-code").value,
-      name,
-      role: "Giáo Viên",
-      locations,
-      subjects
     };
-    state.teachers.push(newTeacher);
-    state.availability[name] = availability;
-  }
-  
-  saveData();
-  closeModal("modal-teacher");
-  renderAll();
-  showToast(id ? "Đã cập nhật GV" : "Đã thêm GV mới");
-}
-
-function deleteTeacher(id) {
-  const teacher = state.teachers.find(t => t.id === id);
-  if (!teacher) return;
-  if (!confirm(`Xóa giáo viên "${teacher.name}"?\nMọi phân công và lịch sẽ bị bỏ.`)) return;
-  
-  state.teachers = state.teachers.filter(t => t.id !== id);
-  delete state.availability[teacher.name];
-  state.assignments.forEach(a => {
-    if (a.teacher === teacher.name) a.teacher = null;
-  });
-  
-  saveData();
-  renderAll();
-  showToast("Đã xóa GV", "error");
-}
-
-// ==================== ASSIGNMENTS ====================
-function renderAssignments() {
-  const search = document.getElementById("assignment-search")?.value?.toLowerCase() || "";
-  const filtered = state.assignments.filter(a => 
-    a.subject.toLowerCase().includes(search) ||
-    a.program.toLowerCase().includes(search) ||
-    (a.teacher && a.teacher.toLowerCase().includes(search))
-  );
-  
-  document.getElementById("assignments-table").innerHTML = filtered.map(a => `
-    <tr>
-      <td>${hinhthucShort(a.hinhthuc)}</td>
-      <td>${a.program}</td>
-      <td>Lớp ${a.grade}</td>
-      <td><strong>${a.subject}</strong></td>
-      <td>${a.teacher || '<span style="color:var(--danger)">Chưa phân</span>'}</td>
-      <td>
-        <button class="btn-sm btn-edit" onclick="editAssignment('${a.id}')">Sửa</button>
-        <button class="btn-sm btn-delete" onclick="deleteAssignment('${a.id}')">Xóa</button>
-      </td>
-    </tr>
-  `).join("");
-  
-  document.getElementById("assignment-search")?.addEventListener("input", renderAssignments);
-  
-  // Update schedule dropdown
-  const scheduleSelect = document.getElementById("schedule-assignment");
-  if (scheduleSelect) {
-    scheduleSelect.innerHTML = '<option value="">-- Chọn phân công cần xếp lịch --</option>' +
-      state.assignments.filter(a => a.teacher).map(a => 
-        `<option value="${a.id}">${hinhthucShort(a.hinhthuc)} • Lớp ${a.grade} • ${a.subject} (${a.program}) - ${a.teacher}</option>`
-      ).join("");
-  }
-  
-  const scheduleModalSelect = document.getElementById("schedule-assignment-select");
-  if (scheduleModalSelect) {
-    scheduleModalSelect.innerHTML = '<option value="">-- Chọn phân công --</option>' +
-      state.assignments.filter(a => a.teacher).map(a => 
-        `<option value="${a.id}">${hinhthucShort(a.hinhthuc)} • Lớp ${a.grade} • ${a.subject} (${a.program}) - ${a.teacher}</option>`
-      ).join("");
+    setTimeout(() => document.addEventListener("click", closeHandler), 0);
   }
 }
-
-document.getElementById("btn-add-assignment").addEventListener("click", () => {
-  document.getElementById("modal-assignment-title").textContent = "Thêm Phân công";
-  document.getElementById("assignment-id").value = "";
-  document.getElementById("assignment-hinhthuc").value = "";
-  document.getElementById("assignment-program").value = "";
-  document.getElementById("assignment-grade").innerHTML = '<option value="">-- Chọn lớp --</option>';
-  document.getElementById("assignment-subject").innerHTML = '<option value="">-- Chọn môn --</option>';
-  document.getElementById("assignment-teacher").innerHTML = '<option value="">-- Chưa phân công --</option>';
-  updateTeacherDropdown();
-  openModal("modal-assignment");
-});
-
-document.getElementById("assignment-program").addEventListener("change", function() {
-  const program = this.value;
-  const grades = GRADES_BY_PROGRAM[program] || [];
-  const subjects = SUBJECTS_BY_PROGRAM[program] || [];
-  
-  document.getElementById("assignment-grade").innerHTML = '<option value="">-- Chọn lớp --</option>' +
-    grades.map(g => `<option value="${g}">Lớp ${g}</option>`).join("");
-  
-  document.getElementById("assignment-subject").innerHTML = '<option value="">-- Chọn môn --</option>' +
-    subjects.map(s => `<option value="${s}">${s}</option>`).join("");
-  
-  updateTeacherDropdown();
-});
-
-document.getElementById("assignment-hinhthuc").addEventListener("change", updateTeacherDropdown);
-
-function updateTeacherDropdown() {
-  const hinhthuc = document.getElementById("assignment-hinhthuc").value;
-  const program = document.getElementById("assignment-program").value;
-  const subject = document.getElementById("assignment-subject").value;
-  
-  let eligibleTeachers = state.teachers;
-  if (hinhthuc && program && subject) {
-    eligibleTeachers = state.teachers.filter(t => 
-      teacherCanTeach(t, program, subject) && teacherTeachesLocation(t, hinhthuc)
-    );
-  }
-  
-  document.getElementById("assignment-teacher").innerHTML = '<option value="">-- Chưa phân công --</option>' +
-    eligibleTeachers.map(t => `<option value="${t.name}">${t.name}</option>`).join("");
-}
-
-function editAssignment(id) {
-  const assignment = state.assignments.find(a => a.id === id);
-  if (!assignment) return;
-  
-  document.getElementById("modal-assignment-title").textContent = "Sửa Phân công";
-  document.getElementById("assignment-id").value = assignment.id;
-  document.getElementById("assignment-hinhthuc").value = assignment.hinhthuc;
-  
-  const program = assignment.program;
-  document.getElementById("assignment-program").value = program;
-  
-  const grades = GRADES_BY_PROGRAM[program] || [];
-  document.getElementById("assignment-grade").innerHTML = '<option value="">-- Chọn lớp --</option>' +
-    grades.map(g => `<option value="${g}" ${g === assignment.grade ? 'selected' : ''}>Lớp ${g}</option>`).join("");
-  
-  const subjects = SUBJECTS_BY_PROGRAM[program] || [];
-  document.getElementById("assignment-subject").innerHTML = '<option value="">-- Chọn môn --</option>' +
-    subjects.map(s => `<option value="${s}" ${s === assignment.subject ? 'selected' : ''}>${s}</option>`).join("");
-  
-  updateTeacherDropdown();
-  document.getElementById("assignment-teacher").value = assignment.teacher || "";
-  
-  openModal("modal-assignment");
-}
-
-function saveAssignment() {
-  const id = document.getElementById("assignment-id").value;
-  const hinhthuc = document.getElementById("assignment-hinhthuc").value;
-  const program = document.getElementById("assignment-program").value;
-  const grade = parseInt(document.getElementById("assignment-grade").value);
-  const subject = document.getElementById("assignment-subject").value;
-  const teacher = document.getElementById("assignment-teacher").value || null;
-  
-  if (!hinhthuc || !program || !grade || !subject) {
-    showToast("Vui lòng điền đầy đủ thông tin!", "error");
-    return;
-  }
-  
-  if (id) {
-    const idx = state.assignments.findIndex(a => a.id === id);
-    if (idx >= 0) {
-      state.assignments[idx] = { ...state.assignments[idx], hinhthuc, program, grade, subject, teacher };
-    }
-  } else {
-    state.assignments.push({ id: newId("a"), hinhthuc, program, grade, subject, teacher });
-  }
-  
-  saveData();
-  closeModal("modal-assignment");
-  renderAll();
-  showToast(id ? "Đã cập nhật phân công" : "Đã thêm phân công mới");
-}
-
-function deleteAssignment(id) {
-  const assignment = state.assignments.find(a => a.id === id);
-  if (!assignment) return;
-  if (!confirm(`Xóa phân công "${assignment.subject} - Lớp ${assignment.grade}"?`)) return;
-  
-  state.assignments = state.assignments.filter(a => a.id !== id);
-  state.schedules = state.schedules.filter(s => s.assignmentId !== id);
-  
-  saveData();
-  renderAll();
-  showToast("Đã xóa phân công", "error");
-}
-
-// ==================== SCHEDULES ====================
-function renderSchedules() {
-  document.getElementById("schedules-table").innerHTML = state.schedules.map(s => {
-    const assignment = state.assignments.find(a => a.id === s.assignmentId);
-    return `
-      <tr>
-        <td>${assignment ? `${hinhthucShort(assignment.hinhthuc)} • Lớp ${assignment.grade} • ${assignment.subject} (${assignment.program}) - ${assignment.teacher}` : 'N/A'}</td>
-        <td><strong>${s.day}</strong></td>
-        <td>${s.slot}</td>
-        <td>
-          <button class="btn-sm btn-delete" onclick="deleteSchedule('${s.id}')">Xóa</button>
-        </td>
-      </tr>
-    `;
-  }).join("");
-}
-
-document.getElementById("btn-add-schedule").addEventListener("click", () => {
-  document.getElementById("schedule-assignment-select").innerHTML = '<option value="">-- Chọn phân công --</option>' +
-    state.assignments.filter(a => a.teacher).map(a => 
-      `<option value="${a.id}">${hinhthucShort(a.hinhthuc)} • Lớp ${a.grade} • ${a.subject} (${a.program}) - ${a.teacher}</option>`
-    ).join("");
-  document.getElementById("schedule-day").value = "";
-  document.getElementById("schedule-slot").value = "";
-  openModal("modal-schedule");
-});
-
-function saveSchedule() {
-  const assignmentId = document.getElementById("schedule-assignment-select").value;
-  const day = document.getElementById("schedule-day").value;
-  const slot = document.getElementById("schedule-slot").value;
-  
-  if (!assignmentId || !day || !slot) {
-    showToast("Vui lòng điền đầy đủ thông tin!", "error");
-    return;
-  }
-  
-  state.schedules.push({ id: newId("s"), assignmentId, day, slot });
-  
-  saveData();
-  closeModal("modal-schedule");
-  renderAll();
-  showToast("Đã thêm lịch học");
-}
-
-function deleteSchedule(id) {
-  if (!confirm("Xóa lịch học này?")) return;
-  state.schedules = state.schedules.filter(s => s.id !== id);
-  saveData();
-  renderAll();
-  showToast("Đã xóa lịch học", "error");
-}
-
-// ==================== MODAL ====================
-function openModal(id) {
-  document.getElementById(id).classList.add("active");
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove("active");
-}
-
-// Close modal on overlay click
-document.querySelectorAll(".modal-overlay").forEach(overlay => {
-  overlay.addEventListener("click", function(e) {
-    if (e.target === this) {
-      this.classList.remove("active");
-    }
-  });
-});
-
-// ==================== INIT ====================
-checkAuth();
 </script>
+
 </body>
 </html>

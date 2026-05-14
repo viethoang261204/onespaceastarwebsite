@@ -1,4 +1,0 @@
-{
-  "buildCommand": "./build.sh",
-  "publish": "dist"
-}
