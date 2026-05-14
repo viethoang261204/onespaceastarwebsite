@@ -1184,7 +1184,7 @@ function renderApp() {
   else if (currentTab === "assignments") content = renderAssignmentsTab();
   else if (currentTab === "schedule") content = renderScheduleTab();
 
-  el.innerHTML = content;
+  el.innerHTML = `<div class="page-section">${content}</div>`;
 
   // Update nav tabs
   document.querySelectorAll(".nav-tab").forEach(btn => {
