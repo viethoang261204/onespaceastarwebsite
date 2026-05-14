@@ -784,7 +784,7 @@ function renderAssignmentsTab() {
               </button>
               <div class="teacher-picker-dropdown" id="picker-${a.id}" style="display:none">
                 <div class="picker-backdrop" onclick="hideAllTeacherPickers()"></div>
-                ${renderTeacherPickerItems(a)}
+                <div class="picker-list">${renderTeacherPickerItems(a)}</div>
               </div>
             </div>
           </td>
@@ -1410,6 +1410,9 @@ function toggleTeacherPicker(id, btn) {
   if (!el) return;
   const isVisible = el.style.display !== "none";
   if (!isVisible) {
+    const rect = btn.getBoundingClientRect();
+    el.style.left = rect.left + "px";
+    el.style.top = (rect.bottom + 6) + "px";
     el.style.display = "block";
     activePickerId = id;
   } else {

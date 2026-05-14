@@ -1057,15 +1057,13 @@ tbody tr:hover { background: rgba(245,240,232,0.6); }
 .teacher-picker-btn svg { width: 13px; height: 13px; color: var(--muted); flex-shrink: 0; }
 
 .teacher-picker-dropdown {
-  position: absolute;
-  left: 0;
-  right: 0;
-  margin-top: 0.375rem;
+  position: fixed;
+  width: 280px;
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 50;
+  z-index: 9999;
   max-height: 20rem;
   overflow-y: auto;
   animation: dropIn 0.12s ease;
@@ -1118,7 +1116,8 @@ tbody tr:hover { background: rgba(245,240,232,0.6); }
 
 .picker-remove:hover { background: var(--danger-light); }
 
-.picker-backdrop { position: fixed; inset: 0; z-index: 40; }
+.picker-backdrop { position: fixed; inset: 0; z-index: 9998; }
+.picker-list { position: relative; z-index: 9999; }
 
 /* Status badges */
 .status-badge {
