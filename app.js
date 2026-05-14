@@ -250,6 +250,33 @@ function exportData() {
   showToast("Đã xuất file backup");
 }
 
+// Restore from JSON file
+function restoreFromJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.teachers || !data.assignments || !data.schedules) {
+        showToast("File không đúng định dạng backup", "danger");
+        return;
+      }
+      gState.teachers = data.teachers;
+      gState.assignments = data.assignments;
+      gState.availability = data.availability || {};
+      gState.schedules = data.schedules;
+      saveState();
+      renderApp();
+      showToast(`Đã khôi phục: ${gState.teachers.length} GV, ${gState.assignments.length} lớp, ${gState.schedules.length} lịch`);
+    } catch (err) {
+      showToast("Lỗi đọc file: " + err.message, "danger");
+    }
+  };
+  reader.readAsText(file);
+  input.value = "";
+}
+
 // ==================== EXCEL IMPORT ====================
 // Map Thai weekday names to our day codes
 const THAI_DAY_MAP = {
