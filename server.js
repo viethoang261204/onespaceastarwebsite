@@ -21,10 +21,15 @@ const server = http.createServer((req, res) => {
   let urlPath = req.url.split('?')[0];
   if (urlPath.endsWith('/') && urlPath !== '/') urlPath = urlPath.slice(0, -1);
 
+  // Use dist/ folder (for Render deployment)
+  const baseDir = fs.existsSync(path.join(__dirname, 'dist'))
+    ? path.join(__dirname, 'dist')
+    : __dirname;
+
   // Default to index.html
   let filePath = urlPath === '' || urlPath === '/'
-    ? path.join(__dirname, 'index.html')
-    : path.join(__dirname, urlPath);
+    ? path.join(baseDir, 'index.html')
+    : path.join(baseDir, urlPath);
 
   const ext = path.extname(filePath).toLowerCase();
   const mime = MIME[ext] || 'application/octet-stream';
@@ -33,7 +38,7 @@ const server = http.createServer((req, res) => {
     if (err) {
       if (err.code === 'ENOENT') {
         // Fallback to index.html for SPA routing
-        fs.readFile(path.join(__dirname, 'index.html'), (err2, content2) => {
+        fs.readFile(path.join(baseDir, 'index.html'), (err2, content2) => {
           if (err2) {
             res.writeHead(500);
             res.end('Server Error');
